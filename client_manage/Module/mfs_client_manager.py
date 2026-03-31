@@ -34,7 +34,8 @@ class MFSClientManager(BaseClientManager):
     ) -> io.BytesIO:
         task, key = self.splitTaskAndKey(data_url_path)
 
-        obj_stream = client.request_file(task, key)
+        obj_bytes = client.request_file(task, key)
+        obj_stream = io.BytesIO(obj_bytes)
         return obj_stream
 
     def downloadObjectWithClient(
@@ -49,7 +50,8 @@ class MFSClientManager(BaseClientManager):
         )
 
         with open(data_file_path, 'wb') as f:
-            f.write(obj_stream.getvalue())
+            obj_stream.seek(0)  # Ensure pointer is at the start
+            f.write(obj_stream.read())
 
         return True
 
