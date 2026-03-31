@@ -1,4 +1,7 @@
+import MFSClient
+
 import io
+from typing import Tuple
 
 from client_manage.Module.base_client_manager import BaseClientManager
 
@@ -8,12 +11,49 @@ class MFSClientManager(BaseClientManager):
         super().__init__()
         return
 
-    def createClient(self):
-        pass
+    def splitTaskAndKey(
+        self,
+        data_url_path: str,
+    ) -> Tuple[str, str]:
+        task = data_url_path.split('/')[0]
+        key = data_url_path[len(task) + 1:]
+        return task, key
 
-    def getObjectStreamDataWithClient(
+    def createClient(self):
+        return MFSClient.MFSClient2()
+
+    def getObjectStreamWithClient(
         self,
         client,
         data_url_path: str,
     ) -> io.BytesIO:
-        pass
+        task, key = self.splitTaskAndKey(data_url_path)
+
+        obj_stream = client.request_file(task, key)
+        return obj_stream
+
+    def downloadObjectWithClient(
+        self,
+        client,
+        data_url_path: str,
+        data_file_path: str,
+    ) -> bool:
+        obj_stream = self.getObjectStreamWithClient(
+            client=client,
+            data_url_path=data_url_path,
+        )
+
+        with open(data_file_path, 'wb') as f:
+            f.write(obj_stream.getvalue())
+
+        return True
+
+    def uploadObjectWithClient(
+        self,
+        client,
+        data_file_path: str,
+        data_url_path: str,
+    ) -> bool:
+        print("[ERROR][MFSClientManager::uploadObjectWithClient]")
+        print('\t this func has not finished!')
+        return False

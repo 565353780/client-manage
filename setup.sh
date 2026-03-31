@@ -6,4 +6,4 @@ cd MFS
 bash /home/tangpei/mfs/bin/build_client.sh
 
 TARGET_DIR=$(python -c "import site; print(site.getsitepackages()[0])")
-cp ./MFSClient.*.so $TARGET_DIR/
+cp ./build_mfs_client/MFS-client/MFSClient.*.so $TARGET_DIR/

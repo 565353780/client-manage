@@ -1,6 +1,9 @@
 import io
+import os
 
 from abc import ABC, abstractmethod
+
+from client_manage.Method.path import createFileFolder, removeFile
 
 
 class BaseClientManager(ABC):
@@ -13,25 +16,25 @@ class BaseClientManager(ABC):
         pass
 
     @abstractmethod
-    def getObjectStreamDataWithClient(
+    def getObjectStreamWithClient(
         self,
         client,
         data_url_path: str,
     ) -> io.BytesIO:
         pass
 
-    def getObjectStreamData(
+    def getObjectStream(
         self,
         data_url_path: str,
         use_common_client: bool=False,
     ) -> io.BytesIO:
         if use_common_client:
-            return self.getObjectStreamDataWithClient(
+            return self.getObjectStreamWithClient(
                 client=self.common_client,
                 data_url_path=data_url_path,
             )
 
-        return self.getObjectStreamDataWithClient(
+        return self.getObjectStreamWithClient(
             client=self.createClient(),
             data_url_path=data_url_path
         )
@@ -42,8 +45,6 @@ class BaseClientManager(ABC):
         client,
         data_url_path: str,
         data_file_path: str,
-        overwrite: bool=False,
-        print_progress: bool=True,
     ) -> bool:
         pass
 
@@ -55,22 +56,44 @@ class BaseClientManager(ABC):
         overwrite: bool=False,
         print_progress: bool=True,
     ) -> bool:
+        if os.path.exists(data_file_path):
+            if not overwrite:
+                return True
+
+            removeFile(data_file_path)
+
+        createFileFolder(data_file_path)
+
+        if print_progress:
+            print('[INFO][BaseClientManager::downloadObject]')
+            print('\t start download object:')
+            print('\t', data_url_path)
+            print('\t -->')
+            print('\t', data_file_path)
+
         if use_common_client:
-            return self.downloadObjectWithClient(
+            if not self.downloadObjectWithClient(
                 client=self.common_client,
                 data_url_path=data_url_path,
                 data_file_path=data_file_path,
-                overwrite=overwrite,
-                print_progress=print_progress,
-            )
+            ):
+                print('[ERROR][BaseClientManager::downloadObject]')
+                print('\t downloadObjectWithClient failed!')
+                return False
 
-        return self.downloadObjectWithClient(
+        if not self.downloadObjectWithClient(
             client=self.createClient(),
             data_url_path=data_url_path,
             data_file_path=data_file_path,
-            overwrite=overwrite,
-            print_progress=print_progress,
-        )
+        ):
+            print('[ERROR][BaseClientManager::downloadObject]')
+            print('\t downloadObjectWithClient failed!')
+            return False
+
+        if print_progress:
+            print('[INFO][BaseClientManager::downloadObject]')
+            print('\t download object finished!')
+        return True
 
     @abstractmethod
     def uploadObjectWithClient(
@@ -78,8 +101,6 @@ class BaseClientManager(ABC):
         client,
         data_file_path: str,
         data_url_path: str,
-        remove_after_upload: bool=True,
-        print_progress: bool=True,
     ) -> bool:
         pass
 
@@ -91,19 +112,42 @@ class BaseClientManager(ABC):
         remove_after_upload: bool=True,
         print_progress: bool=True,
     ) -> bool:
+        if not os.path.exists(data_file_path):
+            print('[ERROR][BaseClientManager::uploadObject]')
+            print('\t data file not exist!')
+            print('\t data_file_path:', data_file_path)
+            return False
+
+        if print_progress:
+            print('[INFO][BaseClientManager::uploadObject]')
+            print('\t start upload object:')
+            print('\t', data_file_path)
+            print('\t -->')
+            print('\t', data_url_path)
+
         if use_common_client:
-            return self.uploadObjectWithClient(
+            if not self.uploadObjectWithClient(
                 client=self.common_client,
                 data_file_path=data_file_path,
                 data_url_path=data_url_path,
-                remove_after_upload=remove_after_upload,
-                print_progress=print_progress,
-            )
+            ):
+                print('[ERROR][BaseClientManager::uploadObject]')
+                print('\t uploadObjectWithClient failed!')
+                return False
 
-        return self.uploadObjectWithClient(
+        if not self.uploadObjectWithClient(
             client=self.createClient(),
             data_file_path=data_file_path,
             data_url_path=data_url_path,
-            remove_after_upload=remove_after_upload,
-            print_progress=print_progress,
-        )
+        ):
+            print('[ERROR][BaseClientManager::uploadObject]')
+            print('\t uploadObjectWithClient failed!')
+            return False
+
+        if print_progress:
+            print('[INFO][BaseClientManager::uploadObject]')
+            print('\t upload object finished!')
+
+        if remove_after_upload:
+            removeFile(data_file_path)
+        return True
