@@ -1,3 +1,8 @@
+try:
+    import torch
+except:
+    pass
+
 import MFSClient
 
 import io
